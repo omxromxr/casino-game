@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Money Casino Slot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #222;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { margin-top: 20px; }
+    #slot-machine { font-size: 3em; margin: 20px; }
+    .slot {
+      display: inline-block;
+      width: 80px;
+      height: 80px;
+      line-height: 80px;
+      margin: 0 10px;
+      background: #444;
+      border-radius: 10px;
+    }
+    input, button, select {
+      font-size: 1em;
+      padding: 10px;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 5px;
+    }
+    input { width: 100px; text-align: center; }
+    #balance { margin-top: 20px; font-size: 1.5em; }
+    #shop {
+      margin-top: 40px;
+      border-top: 2px solid #888;
+      padding-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 🔐 LOGIN SCREEN -->
+<div id="login-screen" style="text-align:center; margin-top:100px;">
+  <h2>🔒 Enter Password to Access the Casino</h2>
+  <input type="password" id="passwordInput" placeholder="Enter password">
+  <button onclick="checkPassword()">Login</button>
+  <p id="loginMessage" style="color:red;"></p>
+</div>
+
+<!-- 🎰 CASINO GAME -->
+<div id="game-content" style="display:none;">
+  <h1>🎰 Casino Slot Machine</h1>
+
+  <div>
+    <label for="betAmount">Bet Amount: $</label>
+    <input type="number" id="betAmount" min="1" value="10">
+    <button onclick="spin()">Spin</button>
+  </div>
+
+  <div id="slot-machine">
+    <div class="slot" id="slot1">❓</div>
+    <div class="slot" id="slot2">❓</div>
+    <div class="slot" id="slot3">❓</div>
+  </div>
+
+  <div id="balance">Balance: $100</div>
+  <div id="message"></div>
+
+  <div id="shop">
+    <h2>🛒 Market</h2>
+    <div>
+      <select id="shopItem">
+        <option value="1">🎁 Lucky Charm - $50</option>
+        <option value="2">🍀 Super Clover - $100</option>
+        <option value="3">💎 Jackpot Gem - $200</option>
+      </select>
+      <button onclick="buyItem()">Buy</button>
+      <button onclick="sellItem()">Sell</button>
+    </div>
+    <div id="inventory">Inventory: (empty)</div>
+  </div>
+</div>
+
+<script>
+  // LOGIN FUNCTION
+  function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    if (input === 'jacobspremium1234567890') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('game-content').style.display = 'block';
+    } else {
+      document.getElementById('loginMessage').textContent = 'Incorrect password. Try again.';
+    }
+  }
+
+  let balance = 100;
+  let inventory = [];
+  const symbols = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
+
+  function updateBalance() {
+    document.getElementById('balance').innerText = `Balance: $${balance}`;
+  }
+
+  function updateInventory() {
+    const invDiv = document.getElementById('inventory');
+    invDiv.innerText = "Inventory: " + (inventory.length ? inventory.join(', ') : "(empty)");
+  }
+
+  function spin() {
+    const bet = parseInt(document.getElementById('betAmount').value);
+    const msg = document.getElementById('message');
+
+    if (isNaN(bet) || bet <= 0) {
+      msg.innerText = 'Enter a valid bet amount.';
+      return;
+    }
+
+    if (balance < bet) {
+      msg.innerText = 'Not enough balance!';
+      return;
+    }
+
+    balance -= bet;
+
+    // Bonus chances from items
+    let bonusWinChance = 0;
+    let forceJackpotChance = 0;
+    inventory.forEach(item => {
+      if (item === "Lucky Charm") bonusWinChance += 1;
+      if (item === "Super Clover") bonusWinChance += 5;
+      if (item === "Jackpot Gem") {
+        bonusWinChance += 15;
+        forceJackpotChance += 5;
+      }
+    });
+
+    // Roll symbols
+    let slot1 = symbols[Math.floor(Math.random() * symbols.length)];
+    let slot2 = symbols[Math.floor(Math.random() * symbols.length)];
+    let slot3 = symbols[Math.floor(Math.random() * symbols.length)];
+
+    // Force jackpot roll
+    if (Math.random() * 100 < forceJackpotChance) {
+      const jackpotSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+      slot1 = slot2 = slot3 = jackpotSymbol;
+    }
+
+    document.getElementById('slot1').innerText = slot1;
+    document.getElementById('slot2').innerText = slot2;
+    document.getElementById('slot3').innerText = slot3;
+
+    let winnings = 0;
+
+    if (slot1 === '7️⃣' && slot2 === '7️⃣' && slot3 === '7️⃣') {
+      winnings = bet * 5;
+      msg.innerText = `🔥 Triple 7s! You won $${winnings}!`;
+    } else if (slot1 === slot2 && slot2 === slot3) {
+      winnings = bet * 3.5;
+      msg.innerText = `🎉 Jackpot! You won $${winnings.toFixed(2)}!`;
+    } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
+      winnings = bet * 2;
+      msg.innerText = `😊 Nice! You won $${winnings}!`;
+    } else {
+      // Bonus win chance
+      if (Math.random() * 100 < bonusWinChance) {
+        winnings = bet * 2;
+        msg.innerText = `🍀 Lucky boost! You won $${winnings}!`;
+      } else {
+        msg.innerText = '🙁 Try again!';
+      }
+    }
+
+    balance += winnings;
+    updateBalance();
+  }
+
+  function buyItem() {
+    const selected = document.getElementById('shopItem').value;
+    let itemName = "";
+    let cost = 0;
+
+    if (selected === "1") {
+      itemName = "Lucky Charm";
+      cost = 50;
+    } else if (selected === "2") {
+      itemName = "Super Clover";
+      cost = 100;
+    } else if (selected === "3") {
+      itemName = "Jackpot Gem";
+      cost = 200;
+    }
+
+    if (balance < cost) {
+      alert("You don't have enough money to buy this item.");
+      return;
+    }
+
+    balance -= cost;
+    inventory.push(itemName);
+    updateBalance();
+    updateInventory();
+  }
+
+  function sellItem() {
+    if (inventory.length === 0) {
+      alert("You have nothing to sell!");
+      return;
+    }
+
+    const itemName = inventory.pop();
+    let refund = 0;
+
+    if (itemName === "Lucky Charm") refund = 25;
+    if (itemName === "Super Clover") refund = 50;
+    if (itemName === "Jackpot Gem") refund = 100;
+
+    balance += refund;
+    alert(`You sold your ${itemName} for $${refund}`);
+    updateBalance();
+    updateInventory();
+  }
+
+  updateBalance();
+  updateInventory();
+</script>
+
+</body>
+</html>
